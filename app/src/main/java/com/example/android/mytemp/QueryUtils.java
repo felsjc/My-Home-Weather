@@ -299,7 +299,7 @@ public final class QueryUtils {
         String[] result = tempHistory.split("\r\n");
 
         //reduce the number of samples in chart to a fraction of 1/filterFactor
-        int filterFactor = 50;
+        int filterFactor = 20;
         //samples must be read from the end to show chart in correct order
         for (int i = result.length - 1; i >= 0; i -= filterFactor) {
 
