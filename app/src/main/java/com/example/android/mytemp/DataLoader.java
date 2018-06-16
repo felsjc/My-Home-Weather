@@ -52,8 +52,8 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
         this.temperatureData = null;
         Log.d(TAG, "DataLoader: " + (INPUT_VERBOSE ? url : ""));
 
-        int userStringId = getContext().getResources().getIdentifier("userw", "string", getContext().getApplicationContext().getPackageName());
-        int passStringId = getContext().getResources().getIdentifier("passw", "string", getContext().getApplicationContext().getPackageName());
+        int userStringId = getContext().getResources().getIdentifier("user", "string", getContext().getApplicationContext().getPackageName());
+        int passStringId = getContext().getResources().getIdentifier("pass", "string", getContext().getApplicationContext().getPackageName());
         if (userStringId != 0 && passStringId != 0) {
             TEST_USER = getContext().getResources().getString(userStringId);
             TEST_PASS = TEST_USER = getContext().getResources().getString(passStringId);
