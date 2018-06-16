@@ -29,8 +29,8 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
     private static final String REQUEST_URL = "https://secure.sarmalink.com/devices/my";
 
     //Test USER
-    private static final String TEST_USER = "dummytestuser";
-    private static final String TEST_PASS = "111222333";
+    private static String TEST_USER = "dummytestuser";
+    private static String TEST_PASS = "111222333";
 
     //Stores login session with main page
     Connection.Response currentSession;
@@ -46,11 +46,18 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
      */
     public DataLoader(Context context, String url) {
 
+
         super(context);
         this.currentSession = null;
         this.temperatureData = null;
         Log.d(TAG, "DataLoader: " + (INPUT_VERBOSE ? url : ""));
 
+        int userStringId = getContext().getResources().getIdentifier("user", "string", getContext().getApplicationContext().getPackageName());
+        int passStringId = getContext().getResources().getIdentifier("pass", "string", getContext().getApplicationContext().getPackageName());
+        if (userStringId != 0 && passStringId != 0) {
+            TEST_USER = getContext().getResources().getString(userStringId);
+            TEST_PASS = TEST_USER = getContext().getResources().getString(passStringId);
+        }
     }
 
     @Override
