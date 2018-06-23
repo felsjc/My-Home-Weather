@@ -108,7 +108,7 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
 
             temperatureData.setCurrentTime(QueryUtils.extractTimestamp(temperatureData.getDeviceHtmlArea()));
 
-            temperatureData.setTemperature24hLineSet(QueryUtils.getTempHistChart(temperatureData.getDeviceHtmlArea(), currentSession.cookies()));
+            temperatureData.setTemperature24hLineSet(QueryUtils.getTempHistChartSample(10,temperatureData.getDeviceHtmlArea(), currentSession.cookies()));
 
         }
 

@@ -129,9 +129,11 @@ public final class QueryUtils {
     }
 
     /**
-     * Download csv file containing temperature history of the day
+     * Downloads csv file containing temperature history of the day
      *
-     * @param element
+     * @param element is the HTML extract that contains temp history form to download the csv
+     * @param cookies contains the cookies for the active session
+     * @return a string with all temperature samples
      */
     public static String extractTempHist(Element element, Map<String, String> cookies) {
 
@@ -287,7 +289,15 @@ public final class QueryUtils {
         Log.d(TAG, "EXIT checkElements: PASSED");
     }
 
-    public static LineSet getTempHistChart(Element element, Map<String, String> cookies) {
+    /**
+     * Extracts the temperature history samples and returns them in a LineSet object
+     *
+     * @param filterFactor reduces the number of samples in chart to a fraction of 1/filterFactor, eg. figlterFactor = 1 returns 100% of collected samples while filterFatctor = 20 returns the number of collected samples/20
+     * @param element      is the HTML element containing the form to download the csv with the temperature history samples
+     * @param cookies      contains the cookies of the current session
+     * @return a LineSet to be used by chart plotting function
+     */
+    public static LineSet getTempHistChartSample(double filterFactor, Element element, Map<String, String> cookies) {
 
         Log.d(TAG, "getTempHistChart: " + (INPUT_VERBOSE ? element : ""));
         LineSet tempHistChart = new LineSet();
@@ -296,58 +306,81 @@ public final class QueryUtils {
         if (tempHistory == "")
             return null;
 
+        //convert the string into an array of temperature samples
         String[] result = tempHistory.split("\r\n");
 
-        //reduce the number of samples in chart to a fraction of 1/filterFactor
-        int filterFactor = 20;
-        //samples must be read from the end to show chart in correct order
+        //samples must be read from the end to display chart in correct order
         for (int i = result.length - 1; i >= 0; i -= filterFactor) {
 
+            //read current sample formatted as "2018-06-22 11:57:27,20.94"
             String currentSample = result[i];
+            //separate timestamp from temperature value
             String[] parts = currentSample.split(",");
             float value = Float.parseFloat(parts[1]);
             String timeLabel = "";
-            //only add labels to first and middle samples, all the rest is left blank (otherwise they get clumsy / overlapped)
-            if (i == result.length - 1 || (i > result.length / 2 - filterFactor / 2 && i < result.length / 2 + filterFactor / 2)) {
-                timeLabel = parts[0];
 
-                DateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                DateFormat outputDateFormat = new SimpleDateFormat("d/MMM");
-                DateFormat outputTimeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
-                try {
-                    timeLabel = outputDateFormat.format(inputDateFormat.parse(timeLabel))
-                            + " - " + outputTimeFormat.format(inputDateFormat.parse(timeLabel));
 
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+            //add time and date stamps to first and middle samples only, all the rest is left blank (otherwise they get clumsy / overlapped)
+            if (i == result.length - 1) //first sample of the chart)
+            {
+                timeLabel = getFormattedDateTimeStamp(parts[0], false);
+            } else if (i >= result.length * 0.75 - filterFactor / 2 && i < result.length * 0.75 + filterFactor / 2) //sample at 75% of te cart
+            {
+                int newPos = (int) ((result.length) * 0.75 - 1);
+                //read current sample formatted as "2018-06-22 11:57:27,20.94"
+                currentSample = result[newPos];
+                //separate timestamp from temperature value
+                parts = currentSample.split(",");
+                value = Float.parseFloat(parts[1]);
+                timeLabel = getFormattedDateTimeStamp(parts[0], true);
+            } else if (i >= result.length * 0.5 - filterFactor / 2 && i < result.length * 0.5 + filterFactor / 2) //sample in the middle of the chart)
+            {
+                int newPos = (int) ((result.length) * 0.5 + 2);
+                //read current sample formatted as "2018-06-22 11:57:27,20.94"
+                currentSample = result[newPos];
+                //separate timestamp from temperature value
+                parts = currentSample.split(",");
+                value = Float.parseFloat(parts[1]);
+                timeLabel = getFormattedDateTimeStamp(parts[0], false);
+            } else if (i >= result.length * 0.25 - filterFactor / 2 && i < result.length * 0.25 + filterFactor / 2) //sample at 25% of te cart
+            {
+                int newPos = (int) ((result.length) * 0.25 + 2);
+                //read current sample formatted as "2018-06-22 11:57:27,20.94"
+                currentSample = result[newPos];
+                //separate timestamp from temperature value
+                parts = currentSample.split(",");
+                value = Float.parseFloat(parts[1]);
+                timeLabel = getFormattedDateTimeStamp(parts[0], true);
+            } else if (i-1 <= filterFactor / 2) {
+                //read current sample formatted as "2018-06-22 11:57:27,20.94"
+                currentSample = result[0];
+                //separate timestamp from temperature value
+                parts = currentSample.split(",");
+                value = Float.parseFloat(parts[1]);
+                timeLabel = getFormattedDateTimeStamp(parts[0], false);
             }
-            tempHistChart.addPoint(timeLabel, value);
-        }
 
-        //Last sample is cut out by filter in previous loop, so add it manually
-        if (result.length > 0) {
-            String currentSample = result[0];
-            String[] parts = currentSample.split(",");
-            float value = Float.parseFloat(parts[1]);
-            String timeLabel = "";
-            timeLabel = parts[0];
-            DateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            DateFormat outputDateFormat = new SimpleDateFormat("d/MMM");
-            DateFormat outputTimeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
-            try {
-                timeLabel = outputDateFormat.format(inputDateFormat.parse(timeLabel))
-                        + " - " + outputTimeFormat.format(inputDateFormat.parse(timeLabel));
-
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
             tempHistChart.addPoint(timeLabel, value);
         }
 
         Log.d(TAG, "EXIT checkElements: " + (EXIT_VERBOSE ? tempHistChart.size() : ""));
         return tempHistChart;
 
+    }
+
+    private static String getFormattedDateTimeStamp(String timeLabel, boolean timeOnly) {
+
+        DateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        DateFormat outputDateFormat = new SimpleDateFormat("d/MMM");
+        DateFormat outputTimeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+        try {
+            timeLabel = timeOnly ? outputTimeFormat.format(inputDateFormat.parse(timeLabel))
+                    : outputDateFormat.format(inputDateFormat.parse(timeLabel)) + " " + outputTimeFormat.format(inputDateFormat.parse(timeLabel));
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return timeLabel;
     }
 
     private static int mod(int x, int y) {
