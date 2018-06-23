@@ -326,7 +326,7 @@ public final class QueryUtils {
                 timeLabel = getFormattedDateTimeStamp(parts[0], false);
             } else if (i >= result.length * 0.75 - filterFactor / 2 && i < result.length * 0.75 + filterFactor / 2) //sample at 75% of te cart
             {
-                int newPos = (int) ((result.length) * 0.75 - 1);
+                int newPos = (int) ((result.length) * 0.75 + 2);
                 //read current sample formatted as "2018-06-22 11:57:27,20.94"
                 currentSample = result[newPos];
                 //separate timestamp from temperature value
