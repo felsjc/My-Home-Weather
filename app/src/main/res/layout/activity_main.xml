@@ -1,57 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main_linear_layout"
+
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/swipe_refresh_view"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:orientation="vertical"
-    android:background="@drawable/gradient_color_blue_green">
+    android:layout_height="match_parent">
 
-
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_weight="1"
-    android:layout_height="0dp"
-    android:orientation="vertical">
-
-    <TextView
-        android:id="@+id/name_text_view"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/main_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        tools:text="Home"
-        android:gravity="center|bottom"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="32sp" />
-    <TextView
-        android:id="@+id/temperature_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:text="Loading..."
-        android:gravity="center"
-        android:textColor="@android:color/white"
-        android:textSize="64sp" />
+        android:layout_height="match_parent"
+        android:background="@drawable/gradient_color_dark_turquoise_violet"
+        android:orientation="vertical"
+        tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/timestamp_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        tools:text="2018-04-28 22:58:00"
-        android:gravity="center|top"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="16sp" />
-</LinearLayout>
 
-    <com.db.chart.view.LineChartView
-        xmlns:chart="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/linechart"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_margin="16dp"
-        android:layout_weight="1"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-</LinearLayout>
+            <RelativeLayout
+                android:id="@+id/loadingPanel"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center" >
+
+                <ProgressBar
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true"
+                    android:indeterminateTintMode="src_atop"
+                    android:indeterminateTint="@color/azure"
+                    />
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/name_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center|bottom"
+                android:textColor="@android:color/white"
+                android:textSize="32sp"
+                tools:text="Home" />
+
+            <TextView
+                android:id="@+id/temperature_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Loading..."
+                android:textColor="@android:color/white"
+                android:textSize="64sp" />
+
+            <TextView
+                android:id="@+id/timestamp_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center|top"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                tools:text="2018-04-28 22:58:00" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginBottom="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chart"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+    </LinearLayout>
+</android.support.v4.widget.SwipeRefreshLayout>

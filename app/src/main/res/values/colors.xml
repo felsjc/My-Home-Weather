@@ -3,4 +3,9 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorLightBlack">#303030</color>
+    <color name="lightTurquoise">#03bfdf</color>
+    <color name="lightPurple">#a31ffa</color>
+    <color name="azure">#566ded</color>
+
 </resources>

@@ -3,9 +3,6 @@ package com.example.android.mytemp;
 import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.util.Log;
-import android.widget.LinearLayout;
-
-import com.db.chart.view.LineChartView;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -108,7 +105,7 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
 
             temperatureData.setCurrentTime(QueryUtils.extractTimestamp(temperatureData.getDeviceHtmlArea()));
 
-            temperatureData.setTemperature24hLineSet(QueryUtils.getTempHistChartSample(10,temperatureData.getDeviceHtmlArea(), currentSession.cookies()));
+            temperatureData.setTemperature24hEntryList(QueryUtils.getTempHistChartSample(5,temperatureData.getDeviceHtmlArea(), currentSession.cookies()));
 
         }
 
@@ -148,7 +145,8 @@ public class DataLoader extends AsyncTaskLoader<TemperatureData> {
             loginResponse = conn.execute();
 
         } catch (Exception e) {
-            Log.e(TAG, "doLogin: ", e);
+            Log.e(TAG, "doLogin: " + e);
+            temperatureData = null;
         }
         Log.d(TAG, "EXIT doLogin: SUCCESS");
         return loginResponse;

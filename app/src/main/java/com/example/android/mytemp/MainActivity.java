@@ -2,31 +2,43 @@ package com.example.android.mytemp;
 
 import android.app.LoaderManager;
 import android.content.Loader;
-import android.graphics.DashPathEffect;
-import android.graphics.Paint;
+import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.AndroidException;
 import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 
-import com.db.chart.animation.Animation;
-import com.db.chart.model.LineSet;
-import com.db.chart.renderer.AxisRenderer;
-import com.db.chart.view.LineChartView;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.Format;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Formatter;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<TemperatureData> {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<TemperatureData>, OnRefreshListener {
 
     private TextView tempTextView;
     private TextView timestampTextView;
     private TextView deviceNameTextView;
+    private LineChart tempHistchart;
+    private LineDataSet dataSet;
+    private LineData lineData;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     /**
      * Constant value for the temperature loader ID.
@@ -35,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final int TEMPERATURE_LOADER_ID = 1;
 
     private static final String LOG_TAG = "MainActivity";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +59,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         tempTextView = (TextView) findViewById(R.id.temperature_text_view);
         timestampTextView = (TextView) findViewById(R.id.timestamp_text_view);
         deviceNameTextView = (TextView) findViewById(R.id.name_text_view);
+        tempHistchart = (LineChart) findViewById(R.id.chart);
+        dataSet = null;
+        lineData = null;
+
+        tempHistchart.setNoDataText("");
 
         // Get a reference to the LoaderManager, in order to interact with loaders.
         LoaderManager loaderManager = getLoaderManager();
@@ -56,7 +74,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         loaderManager.initLoader(TEMPERATURE_LOADER_ID, null, this);
 
 
+
+        /*
+         * Sets up a SwipeRefreshLayout.OnRefreshListener that is invoked when the user
+         * performs a swipe-to-refresh gesture.
+         */
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_view);
+        swipeRefreshLayout.setOnRefreshListener(this);
+
+        //Changing status bar color
+        Window window = this.getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.setStatusBarColor(ContextCompat.getColor(this, R.color.lightTurquoise));
+        window.setNavigationBarColor(ContextCompat.getColor(this, R.color.lightPurple));
+
+        findViewById(R.id.loadingPanel).setVisibility(View.VISIBLE);
     }
+
 
     @Override
     public Loader<TemperatureData> onCreateLoader(int id, Bundle args) {
@@ -69,26 +104,29 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<TemperatureData> loader, TemperatureData data) {
 
-        if (data != null) {
+        findViewById(R.id.loadingPanel).setVisibility(View.GONE);
 
-            Log.d(LOG_TAG, "onLoadFinished: " + data);
-            tempTextView.setText(data.getTemperature() + "°C");
-            timestampTextView.setText(data.getCurrentTime());
-            deviceNameTextView.setText(data.getDeviceName());
+        swipeRefreshLayout.setRefreshing(false);
 
-
-            //plot 24h temperature history on chart
-            if (data.getTemperature24hLineSet() != null) {
-
-                LineChartView lineChartViewTempHist = (LineChartView) findViewById(R.id.linechart);
-                lineChartViewTempHist.reset();
-                lineChartViewTempHist = getFormattedChart(lineChartViewTempHist, data.getTemperature24hLineSet());
-
-                lineChartViewTempHist.show();
-            }
-
-
+        if (data == null) {
+            tempTextView.setText(R.string.loading_error);
+            tempTextView.setTextSize(18);
+            return;
         }
+
+        Log.d(LOG_TAG, "onLoadFinished: " + data);
+        tempTextView.setText(data.getTemperature() + "°C");
+        timestampTextView.setText(data.getCurrentTime());
+        deviceNameTextView.setText(data.getDeviceName());
+
+        //plot 24h temperature history on chart
+        dataSet = new LineDataSet(data.getTemperature24hEntryList(), ""); // add entries to dataset
+
+        // create a data object with the datasets
+        lineData = new LineData(dataSet);
+        tempHistchart.setData(lineData);
+        formatLineChart();
+        tempHistchart.invalidate();
 
     }
 
@@ -100,27 +138,70 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     }
 
-    private LineChartView getFormattedChart(LineChartView lineChartViewTempHist, LineSet dataset) {
 
-        lineChartViewTempHist.reset();
-        dataset.setSmooth(true);
-        dataset.setThickness(4);
-        dataset.setShadow(200,50,50,android.R.color.white);
-        boolean test = dataset.hasShadow();
-        //dataset.setColor();
-        //dataset.setDotsColor(getResources().getColor(android.R.color.white));
-        //dataset.setDotsRadius(5);
+    private void formatLineChart() {
 
+        if (tempHistchart.getData() == null
+                || tempHistchart == null
+                || lineData == null
+                || dataSet == null)
+            return;
 
-        lineChartViewTempHist.addData(dataset);
+        lineData.setValueTextColor(Color.WHITE);
+        lineData.setValueTextSize(9f);
+        lineData.setHighlightEnabled(true);
 
-        float minValue = dataset.getMin().getValue();
-        float maxValue = dataset.getMax().getValue();
+        dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSet.setColor(Color.WHITE);
+        // dataSet.setValueTextColor(ColorTemplate.getHoloBlue());
+        dataSet.setLineWidth(2.5f);
+        dataSet.setDrawCircles(false);
+        dataSet.setDrawValues(false);
+        dataSet.setFillAlpha(65);
+        dataSet.setFillColor(android.R.color.darker_gray);
+        //dataSet.setHighLightColor(Color.rgb(244, 217, 217));
+        dataSet.setHighlightEnabled(false);
+        dataSet.setDrawCircleHole(false);
 
-        //dummy test values
-        //minValue = 23;
-        //maxValue = 23;
+        // no description text
+        tempHistchart.getDescription().setEnabled(false);
+        //no zooming allowed
+        tempHistchart.setScaleEnabled(false);
+        // add animation
+        tempHistchart.animateX(800);
 
+        // tempHistchart.setMarker(markerView(this.getApplicationContext()));
+        List<ILineDataSet> sets = tempHistchart.getData().getDataSets();
+        for (ILineDataSet iSet : sets) {
+            LineDataSet set = (LineDataSet) iSet;
+            set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        }
+
+        XAxis xAxis = tempHistchart.getXAxis();
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setAxisLineColor(Color.WHITE);
+        xAxis.setDrawGridLines(true);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setGridColor(Color.LTGRAY);
+        xAxis.enableGridDashedLine(5, 5, 0);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+
+            private SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM HH:mm");
+
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+
+                return dateFormat.format(new Date((long) value));
+            }
+        });
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setLabelRotationAngle(-15f);
+        xAxis.setLabelCount(6, true);
+        xAxis.setYOffset(-8f);
+        xAxis.setCenterAxisLabels(false);
+
+        float minValue = dataSet.getYMin();
+        float maxValue = dataSet.getYMax();
         //Initial values for Y axis
         int yMax = (int) maxValue + 1;
         int yMin = (int) minValue - 1;
@@ -128,8 +209,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int minAmplitude = 10;
         //Increment between temperatures in Y axis
         int step = 1;
-        //Number of horizontal lines in the grid
-        int hGridLines = 5;
 
         int amplitude = Math.abs((int) yMax - (int) yMin);
         int average = (int) ((maxValue + minValue) / 2);
@@ -158,28 +237,46 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         if (amplitude % step != 0)
             yMax += -amplitude % step + step;
-        amplitude = Math.abs(yMax - yMin);
-        hGridLines = (int) amplitude / step;
-
-        lineChartViewTempHist.setAxisBorderValues(yMin, yMax, step);
-        lineChartViewTempHist.setAxisLabelsSpacing(20);
 
 
-        //Grid
-        Paint gridPaint = new Paint(R.color.colorAccent);
-        gridPaint.setStyle(Paint.Style.FILL);
-        gridPaint.setPathEffect(new
+        YAxis leftAxis = tempHistchart.getAxisLeft();
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);
+        //  leftAxis.setTypeface(Typeface.SANS_SERIF);
+        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setGridColor(Color.LTGRAY);
+        leftAxis.setAxisLineColor(Color.WHITE);
+        leftAxis.setGranularity(1);
+        leftAxis.setGranularityEnabled(true);
+        leftAxis.setAxisMinimum(yMin);
+        leftAxis.setAxisMaximum(yMax);
+        leftAxis.setXOffset(10f);
+        leftAxis.setYOffset(-3f);
+        leftAxis.enableGridDashedLine(5, 10, 0);
+        leftAxis.setValueFormatter(new IAxisValueFormatter() {
 
-                DashPathEffect(new float[]{
-                10, 10
-        }, 0));
-        lineChartViewTempHist.setGrid(hGridLines, 4, gridPaint);
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
 
-        lineChartViewTempHist.setYLabels(AxisRenderer.LabelPosition.OUTSIDE);
-        lineChartViewTempHist.setXLabels(AxisRenderer.LabelPosition.OUTSIDE);
+                BigDecimal intValue = new BigDecimal(value);
+                intValue = intValue.setScale(0, RoundingMode.HALF_EVEN); // here the value is correct (625.30)
 
-        //                lineChartViewTempHist.setXLabels(AxisRenderer.LabelPosition.NONE);
-        DecimalFormat format = new DecimalFormat("##.#");
-        return lineChartViewTempHist;
+                return intValue + "ºC";
+            }
+        });
+
+        YAxis rightAxis = tempHistchart.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        // get the legend (only possible after setting data)
+        Legend l = tempHistchart.getLegend();
+        l.setEnabled(false);
+
+    }
+
+    @Override
+    public void onRefresh() {
+        getLoaderManager().restartLoader(TEMPERATURE_LOADER_ID, null, this);
     }
 }

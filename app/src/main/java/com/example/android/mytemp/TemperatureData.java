@@ -2,9 +2,12 @@ package com.example.android.mytemp;
 
 import com.db.chart.model.LineSet;
 import com.db.chart.view.LineChartView;
+import com.github.mikephil.charting.data.Entry;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
+import java.util.List;
 
 public class TemperatureData {
 
@@ -24,7 +27,7 @@ public class TemperatureData {
     private String currentTime;
 
     //Last 24h temperature history
-    private LineSet temperature24hLineSet;
+    private List<Entry> temperature24hEntryList;
 
     //Linechart with temperature history
     private LineChartView lineChartViewTempHistory;
@@ -34,7 +37,7 @@ public class TemperatureData {
 
         currentTemperature = "";
 
-        temperature24hLineSet = null;
+        temperature24hEntryList = null;
 
         deviceHtmlArea = null;
 
@@ -50,12 +53,12 @@ public class TemperatureData {
         currentTemperature = _temperature;
     }
 
-    public LineSet getTemperature24hLineSet() {
-        return temperature24hLineSet;
+    public List<Entry> getTemperature24hEntryList() {
+        return temperature24hEntryList;
     }
 
-    public void setTemperature24hLineSet(LineSet temperature24hLineSet) {
-        this.temperature24hLineSet = temperature24hLineSet;
+    public void setTemperature24hEntryList(List<Entry> temperature24hEntryList) {
+        this.temperature24hEntryList = temperature24hEntryList;
     }
 
     public String getCurrentTemperature() {
